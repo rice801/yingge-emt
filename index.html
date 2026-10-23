@@ -2,6 +2,7 @@
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>鶯歌義消救護分隊協勤統計</title>
+<script>var gsiOk=false;function gsiReady(){gsiOk=true;if(window.renderG)renderG()}</script>
 <script src="https://accounts.google.com/gsi/client" async defer onload="gsiReady()"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -68,7 +69,7 @@ tr.sp td{background:var(--hi)}
 /* ===== 設定：部署後請填入 ===== */
 const CONFIG={
   CLIENT_ID:'921001196647-vi6cfbvjuk2ofusvs7hhpodqf4v8rr2g.apps.googleusercontent.com',
-  API_URL:'https://script.google.com/macros/s/AKfycbzdNBNURjdVjySMIdR6QlIHkzINrNdc12V_KnWr5m_m7Hod8__cKDAuzKImlSPmxHlz-w/exec'
+  API_URL:'https://script.google.com/macros/s/AKfycby4oUy4oBaiYUZ8pAbbyzGCr5589E1RG8dYg3QPXK1mGK_AO9dtF1_c6g77pMBXfuP2vQ/exec'
 };
 const $=i=>document.getElementById(i);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -76,10 +77,13 @@ let TOKEN=sessionStorage.getItem('tk')||'',ME=null,rows=[],ROSTER=[],TR=[],RS=ne
 
 /* ===== 登入 ===== */
 function gate(msg,btn){$('app').style.display='none';$('gate').style.display='';$('gmsg').innerHTML=msg;$('gbtn').style.display=btn?'flex':'none'}
-function gsiReady(){
+function renderG(){
+  if(/YOUR_/.test(CONFIG.CLIENT_ID)){$('gmsg').innerHTML='尚未設定 CLIENT_ID，請編輯 index.html 最上方的 CONFIG。';return}
   google.accounts.id.initialize({client_id:CONFIG.CLIENT_ID,callback:r=>{TOKEN=r.credential;sessionStorage.setItem('tk',TOKEN);load()}});
   google.accounts.id.renderButton($('gbtn'),{theme:'outline',size:'large',locale:'zh-TW',text:'signin_with'});
 }
+if(gsiOk)renderG();
+setTimeout(()=>{if(!TOKEN&&!$('gbtn').children.length&&$('gate').style.display!='none'&&!/YOUR_/.test(CONFIG.CLIENT_ID))$('gmsg').innerHTML+='<br><span class="note">登入按鈕未載入：請確認可連線到 accounts.google.com、暫時關閉廣告攔截擴充功能，並檢查 CLIENT_ID 與授權來源（網址需完全相符）。</span>'},4000);
 function logout(msg){
   TOKEN='';sessionStorage.removeItem('tk');ME=null;
   try{google.accounts.id.disableAutoSelect()}catch(e){}
