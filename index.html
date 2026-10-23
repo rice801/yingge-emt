@@ -28,10 +28,12 @@ th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right}
 th:first-child,td:first-child,td.l,th.l{text-align:left}
 th{color:var(--mut);font-weight:600;cursor:pointer;user-select:none}
 tr.sp td{background:var(--hi)}
+tr.low td{background:#c62828;color:#fff}
 .bars{display:flex;align-items:flex-end;gap:3px;height:140px;padding-top:8px}
 .bar{flex:1;min-width:8px;background:var(--ac2);border-radius:3px 3px 0 0}
 .bl{display:flex;gap:3px;font-size:10px;color:var(--mut)}.bl span{flex:1;min-width:8px;text-align:center;overflow:hidden}
 .note{font-size:12px;color:var(--mut)}
+.k div.red{background:#c62828}.k div.red b,.k div.red span{color:#fff}
 </style></head><body>
 
 <div class="w" id="gate">
@@ -56,7 +58,6 @@ tr.sp td{background:var(--hi)}
 </div></div>
 
 <div class="card"><div class="k" id="kp"></div></div>
-<div class="card"><h2>每日協勤時數</h2><div class="bars" id="bars"></div><div class="bl" id="bl"></div></div>
 <div class="card"><h2>人員統計 <span class="note">（點表頭排序）</span></h2><div class="s"><table id="tp"></table></div></div>
 <div class="card"><h2>時數統計 <span class="note">（協勤／常訓／公差，單位：小時）</span></h2>
 <p><button class="p" id="xl">匯出 Excel</button></p>
@@ -69,7 +70,8 @@ tr.sp td{background:var(--hi)}
 /* ===== 設定：部署後請填入 ===== */
 const CONFIG={
   CLIENT_ID:'921001196647-vi6cfbvjuk2ofusvs7hhpodqf4v8rr2g.apps.googleusercontent.com',
-  API_URL:'https://script.google.com/macros/s/AKfycby4oUy4oBaiYUZ8pAbbyzGCr5589E1RG8dYg3QPXK1mGK_AO9dtF1_c6g77pMBXfuP2vQ/exec'
+  API_URL:'https://script.google.com/macros/s/AKfycby4oUy4oBaiYUZ8pAbbyzGCr5589E1RG8dYg3QPXK1mGK_AO9dtF1_c6g77pMBXfuP2vQ/exec',
+  MIN_HOURS:12 // 總時數低於此值：總時數卡片與人員統計列標紅
 };
 const $=i=>document.getElementById(i);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -118,16 +120,13 @@ function draw(){
   const R=rows.filter(r=>RS.has(r.nm)&&(!a||r.d>=a)&&(!b||r.d<=b)&&(!nm||r.nm==nm)&&(!ct||r.ct==ct));
   $('meta').textContent=`共 ${rows.length} 筆，符合條件 ${R.length} 筆；統計名單 ${ROSTER.length} 人`;
   const S=k=>R.reduce((x,r)=>x+r[k],0);
-  const kp=[['協勤人次',R.length],['總時數',S('h')],['出勤次數',S('t')],['載送人次',S('c')],['OHCA',S('o')],['ALS',S('a')],['BLS',S('b')],['協勤人數',new Set(R.map(r=>r.nm)).size]];
-  $('kp').innerHTML=kp.map(x=>`<div><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
-  const D={};R.forEach(r=>D[r.d]=(D[r.d]||0)+r.h);const dk=Object.keys(D).sort(),mx=Math.max(1,...Object.values(D));
-  $('bars').innerHTML=dk.map(k=>`<div class="bar" style="height:${D[k]/mx*100}%" title="${k}：${D[k]} 小時"></div>`).join('');
-  $('bl').innerHTML=dk.map(k=>`<span>${+k.slice(8)}</span>`).join('');
+  const kp=[['協勤次數',R.length],['總時數',S('h')],['出勤次數',S('t')],['載送人次',S('c')],['OHCA',S('o')],['ALS',S('a')],['BLS',S('b')]];
+  $('kp').innerHTML=kp.map(x=>`<div${x[0]=='總時數'&&x[1]<CONFIG.MIN_HOURS?' class="red"':''}><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
   const P={};ROSTER.forEach(m=>{if(!nm||nm==m[1])P[m[1]]={nm:m[1],ti:m[0],n:0,h:0,t:0,c:0,o:0,a:0,b:0}});
   R.forEach(r=>{const p=P[r.nm];if(!p)return;p.n++;['h','t','c','o','a','b'].forEach(k=>p[k]+=r[k])});
   const PL=Object.values(P).sort((x,y)=>(sortK=='nm'||sortK=='ti')?sortD*String(x[sortK]).localeCompare(String(y[sortK]),'zh-Hant'):sortD*(x[sortK]-y[sortK]));
   const H=[['nm','姓名'],['ti','職稱'],['n','次數'],['h','時數'],['t','出勤'],['c','載送'],['o','OHCA'],['a','ALS'],['b','BLS']];
-  $('tp').innerHTML='<tr>'+H.map(x=>`<th data-k="${x[0]}">${x[1]}${sortK==x[0]?(sortD<0?' ▼':' ▲'):''}</th>`).join('')+'</tr>'+PL.map(p=>'<tr>'+H.map(x=>`<td>${esc(p[x[0]])}</td>`).join('')+'</tr>').join('');
+  $('tp').innerHTML='<tr>'+H.map(x=>`<th data-k="${x[0]}">${x[1]}${sortK==x[0]?(sortD<0?' ▼':' ▲'):''}</th>`).join('')+'</tr>'+PL.map(p=>'<tr'+(p.h<CONFIG.MIN_HOURS?' class="low"':'')+'>'+H.map(x=>`<td>${esc(p[x[0]])}</td>`).join('')+'</tr>').join('');
   $('tp').querySelectorAll('th').forEach(t=>t.onclick=()=>{const k=t.dataset.k;sortD=sortK==k?-sortD:-1;sortK=k;draw()});
   const TL=ROSTER.filter(m=>!nm||nm==m[1]).map(m=>{const L=R.filter(r=>r.nm==m[1]);
     const z=TR.reduce((s,t)=>s+((t.names.includes(m[1])&&(!a||a<=t.date)&&(!b||b>=t.date))?t.hours:0),0);
