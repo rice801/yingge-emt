@@ -28,7 +28,10 @@ th,td{padding:6px 8px;border-bottom:1px solid var(--bd);text-align:right}
 th:first-child,td:first-child,td.l,th.l{text-align:left}
 th{color:var(--mut);font-weight:600;cursor:pointer;user-select:none}
 tr.sp td{background:var(--hi)}
-tr.low td{background:#c62828;color:#fff}
+td.low{background:#c62828;color:#fff}
+#tp th:first-child,#tp td:first-child,
+#th th:first-child,#th td:first-child,
+#td th:nth-child(2),#td td:nth-child(2){width:6em;min-width:6em;max-width:6em;overflow:hidden;text-overflow:ellipsis}
 .bars{display:flex;align-items:flex-end;gap:3px;height:140px;padding-top:8px}
 .bar{flex:1;min-width:8px;background:var(--ac2);border-radius:3px 3px 0 0}
 .bl{display:flex;gap:3px;font-size:10px;color:var(--mut)}.bl span{flex:1;min-width:8px;text-align:center;overflow:hidden}
@@ -127,7 +130,7 @@ function draw(){
   R.forEach(r=>{const p=P[r.nm];if(!p)return;p.n++;['h','t','c','o','a','b'].forEach(k=>p[k]+=r[k])});
   const PL=Object.values(P).sort((x,y)=>(sortK=='nm'||sortK=='ti')?sortD*String(x[sortK]).localeCompare(String(y[sortK]),'zh-Hant'):sortD*(x[sortK]-y[sortK]));
   const H=[['nm','姓名'],['ti','職稱'],['n','次數'],['h','時數'],['t','出勤'],['c','載送'],['o','OHCA'],['a','ALS'],['b','BLS']];
-  $('tp').innerHTML='<tr>'+H.map(x=>`<th data-k="${x[0]}">${x[1]}${sortK==x[0]?(sortD<0?' ▼':' ▲'):''}</th>`).join('')+'</tr>'+PL.map(p=>'<tr'+(p.h<CONFIG.MIN_HOURS?' class="low"':'')+'>'+H.map(x=>`<td>${esc(p[x[0]])}</td>`).join('')+'</tr>').join('');
+  $('tp').innerHTML='<tr>'+H.map(x=>`<th data-k="${x[0]}">${x[1]}${sortK==x[0]?(sortD<0?' ▼':' ▲'):''}</th>`).join('')+'</tr>'+PL.map(p=>'<tr>'+H.map(x=>`<td${x[0]=='h'&&p.h<CONFIG.MIN_HOURS?' class="low"':''}>${esc(p[x[0]])}</td>`).join('')+'</tr>').join('')+'</tr>').join('');
   $('tp').querySelectorAll('th').forEach(t=>t.onclick=()=>{const k=t.dataset.k;sortD=sortK==k?-sortD:-1;sortK=k;draw()});
   const TL=ROSTER.filter(m=>!nm||nm==m[1]).map(m=>{const L=R.filter(r=>r.nm==m[1]);
     const z=TR.reduce((s,t)=>s+((t.names.includes(m[1])&&(!a||a<=t.date)&&(!b||b>=t.date))?t.hours:0),0);
