@@ -32,6 +32,11 @@ td.low{background:#c62828;color:#fff}
 #tp th:first-child,#tp td:first-child,#th th:first-child,#th td:first-child,#td th:nth-child(2),#td td:nth-child(2){width:6em;min-width:6em;max-width:6em;overflow:hidden;text-overflow:ellipsis}
 .note{font-size:12px;color:var(--mut)}
 .k div.red{background:#c62828}.k div.red b,.k div.red span{color:#fff}
+dialog{border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);width:min(92vw,440px);padding:16px}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.rl{display:flex;flex-direction:column;gap:4px;font-size:13px;margin-bottom:10px}
+textarea{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx);resize:vertical}
+.rb{display:flex;justify-content:flex-end;gap:8px}
 </style></head><body>
 
 <div class="w" id="gate">
@@ -61,9 +66,17 @@ td.low{background:#c62828;color:#fff}
 <p id="xlp" style="display:none"><button class="p" id="xl">匯出 Excel</button></p>
 <div class="s"><table id="th"></table></div>
 <p class="note">協勤＝分類為「協勤」的時數；公差＝分類含「公差」的時數；常訓＝<span id="tn"></span>。</p></div>
-<div class="card"><h2>協勤明細</h2><div class="s"><table id="td"></table></div></div>
+<div class="card"><h2>協勤明細 <button id="rpb" style="float:right;font-size:12px">資料錯誤回報</button></h2><div class="s"><table id="td"></table></div></div>
 </div>
 
+<dialog id="rpd">
+  <h2>資料錯誤回報</h2>
+  <label class="rl">相關日期（選填）<input type="date" id="rdt"></label>
+  <label class="rl">錯誤說明<textarea id="rtx" rows="5" maxlength="1000" placeholder="例如：10/12 協勤時數應為 4 小時，目前顯示 6"></textarea></label>
+  <div id="rst" class="note"></div>
+  <div class="rb"><button id="rc">取消</button><button class="p" id="rsub">送出</button></div>
+</dialog>
+  
 <script>
 /* ===== 設定：部署後請填入 ===== */
 const CONFIG={
@@ -149,5 +162,19 @@ $('xl').onclick=()=>{
   const ws=XLSX.utils.aoa_to_sheet(aoa);ws['!cols']=[{wch:10},{wch:8},{wch:8},{wch:8}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'時數統計');
   XLSX.writeFile(wb,'時數統計_'+$('d1').value+'_'+$('d2').value+'.xlsx');
+};
+$('rpb').onclick=()=>{$('rdt').value='';$('rtx').value='';$('rst').textContent='';$('rsub').disabled=false;$('rpd').showModal()};
+$('rc').onclick=()=>$('rpd').close();
+$('rsub').onclick=async()=>{
+  const msg=$('rtx').value.trim();
+  if(!msg){$('rst').textContent='請填寫錯誤說明';return}
+  $('rsub').disabled=true;$('rst').textContent='送出中…';
+  try{
+    const r=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify({token:TOKEN,action:'report',date:$('rdt').value,message:msg})});
+    const d=await r.json();
+    if(d.error=='unauthorized'){$('rpd').close();logout('登入已逾時，請重新登入');return}
+    if(d.error){$('rst').textContent='送出失敗：'+(d.message||d.error);$('rsub').disabled=false;return}
+    $('rst').textContent='已送出，謝謝您的回報！';setTimeout(()=>$('rpd').close(),1200);
+  }catch(e){$('rst').textContent='連線失敗，請稍後再試';$('rsub').disabled=false}
 };
 </script></body></html>
