@@ -60,7 +60,7 @@ tr.low td{background:#c62828;color:#fff}
 <div class="card"><div class="k" id="kp"></div></div>
 <div class="card"><h2>人員統計 <span class="note">（點表頭排序）</span></h2><div class="s"><table id="tp"></table></div></div>
 <div class="card"><h2>時數統計 <span class="note">（協勤／常訓／公差，單位：小時）</span></h2>
-<p><button class="p" id="xl">匯出 Excel</button></p>
+<p id="xlp" style="display:none"><button class="p" id="xl">匯出 Excel</button></p>
 <div class="s"><table id="th"></table></div>
 <p class="note">協勤＝分類為「協勤」的時數；公差＝分類含「公差」的時數；常訓＝<span id="tn"></span>。</p></div>
 <div class="card"><h2>協勤明細</h2><div class="s"><table id="td"></table></div></div>
@@ -103,6 +103,7 @@ async function load(){
   $('gate').style.display='none';$('app').style.display='';
   $('who').textContent='登入：'+ME.name+'（'+ME.email+'）｜權限：'+(ME.role=='admin'?'管理員（可查看全部人員）':'一般使用者（僅查看自己的統計）');
   $('nml').style.display=ME.role=='admin'?'':'none';
+  $('xlp').style.display=ME.role=='admin'?'':'none';
   init();
 }
 $('lo').onclick=()=>logout();
@@ -142,7 +143,8 @@ function draw(){
 ['d1','d2','nm','ct'].forEach(i=>$(i).onchange=draw);
 $('rs').onclick=init;
 $('m').onclick=()=>{setMonth();draw()};
-$('xl').onclick=()=>{
+$('xl').onclick=()=>{$('xl').onclick=()=>{
+  if(!ME||ME.role!='admin')return;
   if(typeof XLSX=='undefined'){alert('Excel 元件載入失敗，請檢查網路。');return}
   const S=k=>TLG.reduce((s,t)=>s+t[k],0);
   const aoa=[['姓名','協勤','常訓','公差']].concat(TLG.map(t=>[t.nm,t.x,t.z,t.g]),[['合計',S('x'),S('z'),S('g')]]);
