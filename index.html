@@ -37,6 +37,7 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .rl{display:flex;flex-direction:column;gap:4px;font-size:13px;margin-bottom:10px}
 textarea{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx);resize:vertical}
 .rb{display:flex;justify-content:flex-end;gap:8px}
+button.out{background:transparent;color:var(--ac);border:1px solid var(--ac)}
 </style></head><body>
 
 <div class="w" id="gate">
@@ -66,12 +67,11 @@ textarea{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:6
 <p id="xlp" style="display:none"><button class="p" id="xl">匯出 Excel</button></p>
 <div class="s"><table id="th"></table></div>
 <p class="note">協勤＝分類為「協勤」的時數；公差＝分類含「公差」的時數；常訓＝<span id="tn"></span>。</p></div>
-<div class="card"><h2>協勤明細 <button id="rpb" style="float:right;font-size:12px">資料錯誤回報</button></h2><div class="s"><table id="td"></table></div></div>
+<div class="card"><h2>協勤明細 <button id="rpb" class="out" style="float:right;font-size:12px">資料錯誤回報</button></h2><div class="s"><table id="td"></table></div></div>
 </div>
 
 <dialog id="rpd">
   <h2>資料錯誤回報</h2>
-  <label class="rl">相關日期（選填）<input type="date" id="rdt"></label>
   <label class="rl">錯誤說明<textarea id="rtx" rows="5" maxlength="1000" placeholder="例如：10/12 協勤時數應為 4 小時，目前顯示 6"></textarea></label>
   <div id="rst" class="note"></div>
   <div class="rb"><button id="rc">取消</button><button class="p" id="rsub">送出</button></div>
@@ -163,14 +163,14 @@ $('xl').onclick=()=>{
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'時數統計');
   XLSX.writeFile(wb,'時數統計_'+$('d1').value+'_'+$('d2').value+'.xlsx');
 };
-$('rpb').onclick=()=>{$('rdt').value='';$('rtx').value='';$('rst').textContent='';$('rsub').disabled=false;$('rpd').showModal()};
+$('rpb').onclick=()=>{$('rdt').value='';$('rst').textContent='';$('rsub').disabled=false;$('rpd').showModal()};
 $('rc').onclick=()=>$('rpd').close();
 $('rsub').onclick=async()=>{
   const msg=$('rtx').value.trim();
   if(!msg){$('rst').textContent='請填寫錯誤說明';return}
   $('rsub').disabled=true;$('rst').textContent='送出中…';
   try{
-    const r=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify({token:TOKEN,action:'report',date:$('rdt').value,message:msg})});
+    const r=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify({token:TOKEN,action:'report',message:msg})});
     const d=await r.json();
     if(d.error=='unauthorized'){$('rpd').close();logout('登入已逾時，請重新登入');return}
     if(d.error){$('rst').textContent='送出失敗：'+(d.message||d.error);$('rsub').disabled=false;return}
