@@ -163,7 +163,7 @@ $('xl').onclick=()=>{
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'時數統計');
   XLSX.writeFile(wb,'時數統計_'+$('d1').value+'_'+$('d2').value+'.xlsx');
 };
-$('rpb').onclick=()=>{$('rdt').value='';$('rst').textContent='';$('rsub').disabled=false;$('rpd').showModal()};
+$('rpb').onclick=()=>{$('rtx').value='';$('rst').textContent='';$('rsub').disabled=false;$('rpd').showModal()};
 $('rc').onclick=()=>$('rpd').close();
 $('rsub').onclick=async()=>{
   const msg=$('rtx').value.trim();
