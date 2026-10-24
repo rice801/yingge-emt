@@ -42,6 +42,7 @@ body{overflow-x:hidden}
 .rl{display:flex;flex-direction:column;gap:4px;font-size:13px;margin-bottom:10px}
 textarea{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx);resize:vertical}
 .rb{display:flex;justify-content:flex-end;gap:8px}
+input,select,textarea{font-size:16px}
 </style></head><body>
 
 <div class="w" id="gate">
@@ -173,7 +174,7 @@ $('xl').onclick=()=>{
 
 function rpOpen(o){
   $('rpp').classList.toggle('show',o);$('rbk').classList.toggle('show',o);
-  if(o){$('rtx').value='';$('rst').textContent='';$('rsub').disabled=false;setTimeout(()=>$('rtx').focus(),250)}
+  if(o){$('rtx').value='';$('rst').textContent='';$('rsub').disabled=false}
 }
 $('rpb').onclick=()=>rpOpen(true);
 $('rc').onclick=()=>rpOpen(false);
