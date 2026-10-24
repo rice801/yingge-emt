@@ -32,21 +32,22 @@ td.low{background:#c62828;color:#fff}
 #tp th:first-child,#tp td:first-child,#th th:first-child,#th td:first-child,#td th:nth-child(2),#td td:nth-child(2){width:6em;min-width:6em;max-width:6em;overflow:hidden;text-overflow:ellipsis}
 .note{font-size:12px;color:var(--mut)}
 .k div.red{background:#c62828}.k div.red b,.k div.red span{color:#fff}
-dialog{border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--tx);width:min(92vw,340px);padding:16px}
-dialog::backdrop{background:rgba(0,0,0,.5)}
+button.out{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+#rpp{position:fixed;left:0;right:0;bottom:0;max-width:640px;margin:0 auto;z-index:30;background:var(--card);border:1px solid var(--ac);border-bottom:0;border-radius:14px 14px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.25);transform:translateY(105%);visibility:hidden;transition:transform .25s ease,visibility .25s}
+#rpp.show{transform:translateY(0);visibility:visible}
+#rbk{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:25;display:none}
+#rbk.show{display:block}
 .rl{display:flex;flex-direction:column;gap:4px;font-size:13px;margin-bottom:10px}
 textarea{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:6px;background:var(--card);color:var(--tx);resize:vertical}
 .rb{display:flex;justify-content:flex-end;gap:8px}
-button.out{background:transparent;color:var(--ac);border:1px solid var(--ac)}
-  #rpp{display:none;border:1px solid var(--ac);border-radius:8px;padding:12px;margin-bottom:12px}
 </style></head><body>
 
 <div class="w" id="gate">
   <h1>鶯歌義消救護分隊協勤統計</h1>
   <div class="card ctr" id="gc">
-    <div id="gmsg">請使用登記的 Google 帳號登入</div>
+    <div id="gmsg">請使用 maindata 登記的 Google 帳號登入</div>
     <div id="gbtn"></div>
-<div id="gstw" style="margin-top:14px"><button id="gst" class="out">訪客模式（測試用，免登入）</button></div>
+    <div id="gstw" style="margin-top:14px"><button id="gst" class="out">訪客模式（測試用，免登入）</button></div>
   </div>
 </div>
 
@@ -70,14 +71,15 @@ button.out{background:transparent;color:var(--ac);border:1px solid var(--ac)}
 <div class="s"><table id="th"></table></div>
 <p class="note">協勤＝分類為「協勤」的時數；公差＝分類含「公差」的時數；常訓＝<span id="tn"></span>。</p></div>
 <div class="card"><h2>協勤明細 <button id="rpb" class="out" style="float:right;font-size:12px">資料錯誤回報</button></h2>
+<div id="rbk"></div>
 <div id="rpp">
+  <h2>資料錯誤回報</h2>
   <label class="rl">錯誤說明<textarea id="rtx" rows="4" maxlength="1000" placeholder="例如：10/12 協勤時數應為 4 小時，目前顯示 6"></textarea></label>
   <div id="rst" class="note"></div>
   <div class="rb"><button id="rc">取消</button><button class="p" id="rsub">送出</button></div>
 </div><div class="s"><table id="td"></table></div></div>
 </div>
 
-  
 <script>
 /* ===== 設定：部署後請填入 ===== */
 const CONFIG={
@@ -88,8 +90,8 @@ const CONFIG={
 const $=i=>document.getElementById(i);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let TOKEN=sessionStorage.getItem('tk')||'',ME=null,rows=[],ROSTER=[],TR=[],RS=new Set();
-let GUEST=false;
 
+let GUEST=false;
 /* ===== 登入 ===== */
 function gate(msg,btn){$('app').style.display='none';$('gate').style.display='';$('gmsg').innerHTML=msg;$('gbtn').style.display=btn?'flex':'none';$('gstw').style.display=btn?'':'none'}
 function renderG(){
@@ -102,7 +104,7 @@ setTimeout(()=>{if(!TOKEN&&!$('gbtn').children.length&&$('gate').style.display!=
 function logout(msg){
   TOKEN='';GUEST=false;sessionStorage.removeItem('tk');ME=null;
   try{google.accounts.id.disableAutoSelect()}catch(e){}
-  gate(msg||'已登出。請使用 maindata 登記的 Google 帳號登入',true);
+  gate(msg||'已登出。請使用 登記的 Google 帳號登入',true);
 }
 async function load(){
   gate('資料載入中…',false);
@@ -110,7 +112,7 @@ async function load(){
   try{const r=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify({token:TOKEN})});d=await r.json()}
   catch(e){gate('連線失敗，請稍後再試。<br><button onclick="load()">重試</button> <button onclick="logout()">登出</button>',false);return}
   if(d.error=='unauthorized'){logout('登入已逾時，請重新登入');return}
-  if(d.error=='forbidden'){gate('帳號 <b>'+esc(d.email)+'</b> 不在授權名單中。<br>請聯絡管理員確認 maindata 是否已登記您的 Gmail。<br><button onclick="logout()">改用其他帳號</button>',false);return}
+  if(d.error=='forbidden'){gate('帳號 <b>'+esc(d.email)+'</b> 不在授權名單中。<br>請聯絡管理員確認是否已登記您的 Gmail。<br><button onclick="logout()">改用其他帳號</button>',false);return}
   if(d.error){gate('伺服器錯誤：'+esc(d.message||d.error)+'<br><button onclick="load()">重試</button>',false);return}
   ME=d.me;rows=d.rows;ROSTER=d.roster;TR=d.trainings;RS=new Set(ROSTER.map(x=>x[1]));
   $('gate').style.display='none';$('app').style.display='';
@@ -165,12 +167,14 @@ $('xl').onclick=()=>{
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'時數統計');
   XLSX.writeFile(wb,'時數統計_'+$('d1').value+'_'+$('d2').value+'.xlsx');
 };
-$('rpb').onclick=()=>{
-  const open=$('rpp').style.display=='block';
-  $('rpp').style.display=open?'none':'block';
-  if(!open){$('rtx').value='';$('rst').textContent='';$('rsub').disabled=false;$('rtx').focus()}
-};
-$('rc').onclick=()=>{$('rpp').style.display='none'};
+
+function rpOpen(o){
+  $('rpp').classList.toggle('show',o);$('rbk').classList.toggle('show',o);
+  if(o){$('rtx').value='';$('rst').textContent='';$('rsub').disabled=false;setTimeout(()=>$('rtx').focus(),250)}
+}
+$('rpb').onclick=()=>rpOpen(true);
+$('rc').onclick=()=>rpOpen(false);
+$('rbk').onclick=()=>rpOpen(false);
 $('rsub').onclick=async()=>{
   const msg=$('rtx').value.trim();
   if(!msg){$('rst').textContent='請填寫錯誤說明';return}
@@ -179,10 +183,10 @@ $('rsub').onclick=async()=>{
   try{
     const r=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify({token:TOKEN,action:'report',message:msg})});
     const d=await r.json();
-    if(d.error=='unauthorized'){$('rpp').style.display='none';logout('登入已逾時，請重新登入');return}
+    if(d.error=='unauthorized'){rpOpen(false);logout('登入已逾時，請重新登入');return}
     if(d.error){$('rst').textContent='送出失敗：'+(d.message||d.error);$('rsub').disabled=false;return}
     $('rst').textContent='已送出，謝謝您的回報！';
-    setTimeout(()=>{$('rpp').style.display='none'},1500);
+    setTimeout(()=>rpOpen(false),1500);
   }catch(e){$('rst').textContent='連線失敗，請稍後再試';$('rsub').disabled=false}
 };
 /* ===== 訪客模式：本機產生測試資料，不連後端 ===== */
