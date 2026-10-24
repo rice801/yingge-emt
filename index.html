@@ -44,8 +44,9 @@ button.out{background:transparent;color:var(--ac);border:1px solid var(--ac)}
 <div class="w" id="gate">
   <h1>鶯歌義消救護分隊協勤統計</h1>
   <div class="card ctr" id="gc">
-    <div id="gmsg">請使用 maindata 登記的 Google 帳號登入</div>
+    <div id="gmsg">請使用登記的 Google 帳號登入</div>
     <div id="gbtn"></div>
+<div id="gstw" style="margin-top:14px"><button id="gst" class="out">訪客模式（測試用，免登入）</button></div>
   </div>
 </div>
 
@@ -87,9 +88,10 @@ const CONFIG={
 const $=i=>document.getElementById(i);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let TOKEN=sessionStorage.getItem('tk')||'',ME=null,rows=[],ROSTER=[],TR=[],RS=new Set();
+let GUEST=false;
 
 /* ===== 登入 ===== */
-function gate(msg,btn){$('app').style.display='none';$('gate').style.display='';$('gmsg').innerHTML=msg;$('gbtn').style.display=btn?'flex':'none'}
+function gate(msg,btn){$('app').style.display='none';$('gate').style.display='';$('gmsg').innerHTML=msg;$('gbtn').style.display=btn?'flex':'none';$('gstw').style.display=btn?'':'none'}
 function renderG(){
   if(/YOUR_/.test(CONFIG.CLIENT_ID)){$('gmsg').innerHTML='尚未設定 CLIENT_ID，請編輯 index.html 最上方的 CONFIG。';return}
   google.accounts.id.initialize({client_id:CONFIG.CLIENT_ID,callback:r=>{TOKEN=r.credential;sessionStorage.setItem('tk',TOKEN);load()}});
@@ -98,7 +100,7 @@ function renderG(){
 if(gsiOk)renderG();
 setTimeout(()=>{if(!TOKEN&&!$('gbtn').children.length&&$('gate').style.display!='none'&&!/YOUR_/.test(CONFIG.CLIENT_ID))$('gmsg').innerHTML+='<br><span class="note">登入按鈕未載入：請確認可連線到 accounts.google.com、暫時關閉廣告攔截擴充功能，並檢查 CLIENT_ID 與授權來源（網址需完全相符）。</span>'},4000);
 function logout(msg){
-  TOKEN='';sessionStorage.removeItem('tk');ME=null;
+  TOKEN='';GUEST=false;sessionStorage.removeItem('tk');ME=null;
   try{google.accounts.id.disableAutoSelect()}catch(e){}
   gate(msg||'已登出。請使用 maindata 登記的 Google 帳號登入',true);
 }
@@ -118,7 +120,7 @@ async function load(){
   init();
 }
 $('lo').onclick=()=>logout();
-$('rf').onclick=()=>load();
+$('rf').onclick=()=>GUEST?guest():load();
 if(TOKEN)load();
 
 /* ===== 統計 ===== */
@@ -172,6 +174,7 @@ $('rc').onclick=()=>{$('rpp').style.display='none'};
 $('rsub').onclick=async()=>{
   const msg=$('rtx').value.trim();
   if(!msg){$('rst').textContent='請填寫錯誤說明';return}
+  if(GUEST){$('rst').textContent='訪客模式為測試資料，不會送出回報';return}
   $('rsub').disabled=true;$('rst').textContent='送出中…';
   try{
     const r=await fetch(CONFIG.API_URL,{method:'POST',body:JSON.stringify({token:TOKEN,action:'report',message:msg})});
@@ -182,4 +185,22 @@ $('rsub').onclick=async()=>{
     setTimeout(()=>{$('rpp').style.display='none'},1500);
   }catch(e){$('rst').textContent='連線失敗，請稍後再試';$('rsub').disabled=false}
 };
+/* ===== 訪客模式：本機產生測試資料，不連後端 ===== */
+const GUEST_NAMES=['庖九虎','伍賽奇','劉浪翰'];
+function guest(){
+  const rnd=(a,b)=>a+Math.floor(Math.random()*(b-a+1)),pad=n=>String(n).padStart(2,'0');
+  const nm=GUEST_NAMES[rnd(0,GUEST_NAMES.length-1)],T=new Date(),ym=T.getFullYear()+'-'+pad(T.getMonth()+1);
+  const st=rnd(8,17),h=rnd(2,8),c=rnd(0,3);
+  let left=c;const o=left?rnd(0,1):0;left-=o;const a=left?rnd(0,left):0;left-=a;
+  GUEST=true;
+  rows=[{d:ym+'-'+pad(rnd(1,T.getDate())),nm:nm,s:pad(st)+'00',e:pad((st+h)%24)+'00',h:h,t:rnd(c?1:0,3),c:c,o:o,a:a,b:left,ct:'協勤'}];
+  ROSTER=[['隊員',nm]];RS=new Set([nm]);
+  TR=[{date:ym+'-01',hours:3,names:Math.random()<0.5?[nm]:[]}];
+  ME={name:nm,email:'訪客模式',role:'user'};
+  $('gate').style.display='none';$('app').style.display='';
+  $('who').textContent='訪客模式（測試資料，每次進入或重新整理會隨機產生）｜姓名：'+nm+'｜權限：一般使用者';
+  $('nml').style.display='none';$('xlp').style.display='none';
+  init();
+}
+$('gst').onclick=guest;
 </script></body></html>
