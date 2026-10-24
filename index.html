@@ -33,8 +33,10 @@ td.low{background:#c62828;color:#fff}
 .note{font-size:12px;color:var(--mut)}
 .k div.red{background:#c62828}.k div.red b,.k div.red span{color:#fff}
 button.out{background:transparent;color:var(--ac);border:1px solid var(--ac)}
-#rpp{position:fixed;left:0;right:0;bottom:0;max-width:640px;margin:0 auto;z-index:30;background:var(--card);border:1px solid var(--ac);border-bottom:0;border-radius:14px 14px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.25);transform:translateY(105%);visibility:hidden;transition:transform .25s ease,visibility .25s}
-#rpp.show{transform:translateY(0);visibility:visible}
+#rpp{position:fixed;left:50%;bottom:0;width:min(100%,560px);z-index:30;background:var(--card);border:1px solid var(--ac);border-bottom:0;border-radius:14px 14px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 24px rgba(0,0,0,.25);transform:translate(-50%,105%);visibility:hidden;transition:transform .25s ease,visibility .25s}
+#rpp.show{transform:translate(-50%,0);visibility:visible}
+#rpp textarea{width:100%;display:block}
+body{overflow-x:hidden}
 #rbk{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:25;display:none}
 #rbk.show{display:block}
 .rl{display:flex;flex-direction:column;gap:4px;font-size:13px;margin-bottom:10px}
@@ -71,15 +73,16 @@ textarea{font:inherit;padding:6px 8px;border:1px solid var(--bd);border-radius:6
 <div class="s"><table id="th"></table></div>
 <p class="note">協勤＝分類為「協勤」的時數；公差＝分類含「公差」的時數；常訓＝<span id="tn"></span>。</p></div>
 <div class="card"><h2>協勤明細 <button id="rpb" class="out" style="float:right;font-size:12px">資料錯誤回報</button></h2>
+
+<div class="s"><table id="td"></table></div></div>
+</div>
 <div id="rbk"></div>
 <div id="rpp">
   <h2>資料錯誤回報</h2>
   <label class="rl">錯誤說明<textarea id="rtx" rows="4" maxlength="1000" placeholder="例如：10/12 協勤時數應為 4 小時，目前顯示 6"></textarea></label>
   <div id="rst" class="note"></div>
   <div class="rb"><button id="rc">取消</button><button class="p" id="rsub">送出</button></div>
-</div><div class="s"><table id="td"></table></div></div>
 </div>
-
 <script>
 /* ===== 設定：部署後請填入 ===== */
 const CONFIG={
@@ -104,7 +107,7 @@ setTimeout(()=>{if(!TOKEN&&!$('gbtn').children.length&&$('gate').style.display!=
 function logout(msg){
   TOKEN='';GUEST=false;sessionStorage.removeItem('tk');ME=null;
   try{google.accounts.id.disableAutoSelect()}catch(e){}
-  gate(msg||'已登出。請使用 登記的 Google 帳號登入',true);
+  gate(msg||'已登出。請使用  登記的 Google 帳號登入',true);
 }
 async function load(){
   gate('資料載入中…',false);
