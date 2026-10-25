@@ -51,6 +51,7 @@ a.btn{display:inline-block;font:inherit;padding:6px 8px;border:1px solid #1565c0
   <div class="card ctr" id="gc">
     <div id="gmsg">請使用 分隊 登記的 Google 帳號登入</div>
     <div id="gbtn"></div>
+<div id="iab" class="note" style="display:none;margin-top:12px;color:var(--ac)"></div>
     <div id="gstw" style="margin-top:14px"><button id="gst" class="out">訪客模式（測試用，免登入）</button></div>
   </div>
 </div>
@@ -94,6 +95,23 @@ const CONFIG={
   MIN_HOURS:12 // 總時數低於此值：總時數卡片與人員統計列標紅
 };
 const $=i=>document.getElementById(i);
+/* ===== 內建瀏覽器偵測：LINE 等無法使用 Google 登入 ===== */
+(function(){
+  const ua=navigator.userAgent;
+  const inLine=/\bLine\//i.test(ua);
+  if(!(inLine||/FBAN|FBAV|Instagram|MicroMessenger|Messenger/i.test(ua)))return;
+  if(inLine&&!/[?&]openExternalBrowser=1/.test(location.search)){
+    const u=new URL(location.href);u.searchParams.set('openExternalBrowser','1');
+    location.replace(u.toString());return;
+  }
+  window.IN_APP=true;
+})();
+if(window.IN_APP){
+  $('iab').style.display='block';
+  $('iab').innerHTML='偵測到您正使用 App 內建瀏覽器，Google 無法在此登入。<br>請點右上角「⋯」或分享圖示，選擇「在瀏覽器中開啟」（Safari／Chrome）。<br><button id="cpl" style="margin-top:8px">複製網址</button>';
+  $('cpl').onclick=()=>{const u=location.href.split('?')[0];
+    (navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(()=>{$('cpl').textContent='已複製，請貼到 Safari／Chrome'}).catch(()=>prompt('請複製網址',u))};
+}
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let TOKEN=sessionStorage.getItem('tk')||'',ME=null,rows=[],ROSTER=[],TR=[],RS=new Set();
 
