@@ -160,11 +160,11 @@ function draw(){
   const R=rows.filter(r=>RS.has(r.nm)&&(!a||r.d>=a)&&(!b||r.d<=b)&&(!nm||r.nm==nm)&&(!ct||r.ct==ct));
   $('meta').textContent=`共 ${rows.length} 筆，符合條件 ${R.length} 筆；統計名單 ${ROSTER.length} 人`;
   const S=k=>R.reduce((x,r)=>x+r[k],0);
-  const kp=[['協勤次數',R.length],['總時數',S('h')],['出勤次數',S('t')],['載送人次',S('c')],['OHCA',S('o')],['ALS',S('a')],['BLS',S('b')]];
+  const kp=[['協勤次數',R.filter(r=>r.ct=='協勤').length],['總時數',R.filter(r=>r.ct=='協勤').reduce((s,r)=>s+r.h,0)],['公差',R.filter(r=>r.ct.includes('公差')).reduce((s,r)=>s+r.h,0)],['出勤次數',S('t')],['載送人次',S('c')],['OHCA',S('o')],['ALS',S('a')],['BLS',S('b')]];
   const spn=R.filter(r=>r.sp).length;if(spn)kp.push(['特殊救護',spn]);
   $('kp').innerHTML=kp.map(x=>`<div${x[0]=='總時數'&&x[1]<CONFIG.MIN_HOURS?' class="red"':''}><b>${x[1]}</b><span>${x[0]}</span></div>`).join('');
   const P={};ROSTER.forEach(m=>{if(!nm||nm==m[1])P[m[1]]={nm:m[1],ti:m[0],n:0,h:0,t:0,c:0,o:0,a:0,b:0}});
-  R.forEach(r=>{const p=P[r.nm];if(!p)return;p.n++;['h','t','c','o','a','b'].forEach(k=>p[k]+=r[k])});
+  R.forEach(r=>{const p=P[r.nm];if(!p)return;if(r.ct=='協勤')p.n++;['t','c','o','a','b'].forEach(k=>p[k]+=r[k]);if(r.ct=='協勤')p.h+=r.h});
   const PL=Object.values(P).sort((x,y)=>(sortK=='nm'||sortK=='ti')?sortD*String(x[sortK]).localeCompare(String(y[sortK]),'zh-Hant'):sortD*(x[sortK]-y[sortK]));
   const H=[['nm','姓名'],['ti','職稱'],['n','次數'],['h','時數'],['t','出勤'],['c','載送'],['o','OHCA'],['a','ALS'],['b','BLS']];
   $('tp').innerHTML='<tr>'+H.map(x=>`<th data-k="${x[0]}">${x[1]}${sortK==x[0]?(sortD<0?' ▼':' ▲'):''}</th>`).join('')+'</tr>'+PL.map(p=>'<tr>'+H.map(x=>`<td${x[0]=='h'&&p.h<CONFIG.MIN_HOURS?' class="low"':''}>${esc(p[x[0]])}</td>`).join('')+'</tr>').join('');
